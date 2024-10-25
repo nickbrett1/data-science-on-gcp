@@ -1,6 +1,4 @@
-Flask
-google-cloud-storage
-google-cloud-bigquery
-gunicorn
-
-
+Flask==2.0.1
+google-cloud-storage==2.18.2
+google-cloud-bigquery==3.26.0
+gunicorn==20.1.0
