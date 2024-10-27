@@ -27,7 +27,7 @@ from google.cloud.storage import Blob
 from google.cloud import bigquery
 
 SOURCE = "https://storage.googleapis.com/data-science-on-gcp/edition2/raw"
-#SOURCE = "https://transtats.bts.gov/PREZIP"
+# SOURCE = "https://transtats.bts.gov/PREZIP"
 
 
 def urlopen(url):
@@ -36,8 +36,8 @@ def urlopen(url):
 
     ctx_no_secure = ssl.create_default_context()
     ctx_no_secure.set_ciphers('HIGH:!DH:!aNULL')
-    ctx_no_secure.check_hostname = False
-    ctx_no_secure.verify_mode = ssl.CERT_NONE
+    ctx_no_secure.check_hostname = True
+    ctx_no_secure.verify_mode = ssl.CERT_REQUIRED
     return impl(url, context=ctx_no_secure)
 
 
@@ -88,6 +88,7 @@ def upload(csvfile, bucketname, blobname):
     """
     Uploads the CSV file into the bucket with the given blobname
     """
+
     client = storage.Client()
     bucket = client.get_bucket(bucketname)
     logging.info(bucket)
@@ -105,19 +106,24 @@ def bqload(gcsfile, year, month):
     """
     client = bigquery.Client()
     # truncate existing partition ...
-    table_ref = client.dataset('dsongcp').table('flights_raw${}{}'.format(year, month))
+    table_ref = client.dataset('dsongcp').table(
+        'flights_raw${}{}'.format(year, month))
     job_config = bigquery.LoadJobConfig()
     job_config.source_format = 'CSV'
     job_config.write_disposition = 'WRITE_TRUNCATE'
     job_config.ignore_unknown_values = True
-    job_config.time_partitioning = bigquery.table.TimePartitioning('MONTH', 'FlightDate')
+    job_config.time_partitioning = bigquery.table.TimePartitioning(
+        'MONTH', 'FlightDate')
     job_config.skip_leading_rows = 1
     job_config.schema = [
-        bigquery.SchemaField(col_and_type.split(':')[0], col_and_type.split(':')[1])  #, mode='required')
+        bigquery.SchemaField(col_and_type.split(
+            ':')[0], col_and_type.split(':')[1])  # , mode='required')
         for col_and_type in
-        "Year:STRING,Quarter:STRING,Month:STRING,DayofMonth:STRING,DayOfWeek:STRING,FlightDate:DATE,Reporting_Airline:STRING,DOT_ID_Reporting_Airline:STRING,IATA_CODE_Reporting_Airline:STRING,Tail_Number:STRING,Flight_Number_Reporting_Airline:STRING,OriginAirportID:STRING,OriginAirportSeqID:STRING,OriginCityMarketID:STRING,Origin:STRING,OriginCityName:STRING,OriginState:STRING,OriginStateFips:STRING,OriginStateName:STRING,OriginWac:STRING,DestAirportID:STRING,DestAirportSeqID:STRING,DestCityMarketID:STRING,Dest:STRING,DestCityName:STRING,DestState:STRING,DestStateFips:STRING,DestStateName:STRING,DestWac:STRING,CRSDepTime:STRING,DepTime:STRING,DepDelay:STRING,DepDelayMinutes:STRING,DepDel15:STRING,DepartureDelayGroups:STRING,DepTimeBlk:STRING,TaxiOut:STRING,WheelsOff:STRING,WheelsOn:STRING,TaxiIn:STRING,CRSArrTime:STRING,ArrTime:STRING,ArrDelay:STRING,ArrDelayMinutes:STRING,ArrDel15:STRING,ArrivalDelayGroups:STRING,ArrTimeBlk:STRING,Cancelled:STRING,CancellationCode:STRING,Diverted:STRING,CRSElapsedTime:STRING,ActualElapsedTime:STRING,AirTime:STRING,Flights:STRING,Distance:STRING,DistanceGroup:STRING,CarrierDelay:STRING,WeatherDelay:STRING,NASDelay:STRING,SecurityDelay:STRING,LateAircraftDelay:STRING,FirstDepTime:STRING,TotalAddGTime:STRING,LongestAddGTime:STRING,DivAirportLandings:STRING,DivReachedDest:STRING,DivActualElapsedTime:STRING,DivArrDelay:STRING,DivDistance:STRING,Div1Airport:STRING,Div1AirportID:STRING,Div1AirportSeqID:STRING,Div1WheelsOn:STRING,Div1TotalGTime:STRING,Div1LongestGTime:STRING,Div1WheelsOff:STRING,Div1TailNum:STRING,Div2Airport:STRING,Div2AirportID:STRING,Div2AirportSeqID:STRING,Div2WheelsOn:STRING,Div2TotalGTime:STRING,Div2LongestGTime:STRING,Div2WheelsOff:STRING,Div2TailNum:STRING,Div3Airport:STRING,Div3AirportID:STRING,Div3AirportSeqID:STRING,Div3WheelsOn:STRING,Div3TotalGTime:STRING,Div3LongestGTime:STRING,Div3WheelsOff:STRING,Div3TailNum:STRING,Div4Airport:STRING,Div4AirportID:STRING,Div4AirportSeqID:STRING,Div4WheelsOn:STRING,Div4TotalGTime:STRING,Div4LongestGTime:STRING,Div4WheelsOff:STRING,Div4TailNum:STRING,Div5Airport:STRING,Div5AirportID:STRING,Div5AirportSeqID:STRING,Div5WheelsOn:STRING,Div5TotalGTime:STRING,Div5LongestGTime:STRING,Div5WheelsOff:STRING,Div5TailNum:STRING".split(',')
+        "Year:STRING,Quarter:STRING,Month:STRING,DayofMonth:STRING,DayOfWeek:STRING,FlightDate:DATE,Reporting_Airline:STRING,DOT_ID_Reporting_Airline:STRING,IATA_CODE_Reporting_Airline:STRING,Tail_Number:STRING,Flight_Number_Reporting_Airline:STRING,OriginAirportID:STRING,OriginAirportSeqID:STRING,OriginCityMarketID:STRING,Origin:STRING,OriginCityName:STRING,OriginState:STRING,OriginStateFips:STRING,OriginStateName:STRING,OriginWac:STRING,DestAirportID:STRING,DestAirportSeqID:STRING,DestCityMarketID:STRING,Dest:STRING,DestCityName:STRING,DestState:STRING,DestStateFips:STRING,DestStateName:STRING,DestWac:STRING,CRSDepTime:STRING,DepTime:STRING,DepDelay:STRING,DepDelayMinutes:STRING,DepDel15:STRING,DepartureDelayGroups:STRING,DepTimeBlk:STRING,TaxiOut:STRING,WheelsOff:STRING,WheelsOn:STRING,TaxiIn:STRING,CRSArrTime:STRING,ArrTime:STRING,ArrDelay:STRING,ArrDelayMinutes:STRING,ArrDel15:STRING,ArrivalDelayGroups:STRING,ArrTimeBlk:STRING,Cancelled:STRING,CancellationCode:STRING,Diverted:STRING,CRSElapsedTime:STRING,ActualElapsedTime:STRING,AirTime:STRING,Flights:STRING,Distance:STRING,DistanceGroup:STRING,CarrierDelay:STRING,WeatherDelay:STRING,NASDelay:STRING,SecurityDelay:STRING,LateAircraftDelay:STRING,FirstDepTime:STRING,TotalAddGTime:STRING,LongestAddGTime:STRING,DivAirportLandings:STRING,DivReachedDest:STRING,DivActualElapsedTime:STRING,DivArrDelay:STRING,DivDistance:STRING,Div1Airport:STRING,Div1AirportID:STRING,Div1AirportSeqID:STRING,Div1WheelsOn:STRING,Div1TotalGTime:STRING,Div1LongestGTime:STRING,Div1WheelsOff:STRING,Div1TailNum:STRING,Div2Airport:STRING,Div2AirportID:STRING,Div2AirportSeqID:STRING,Div2WheelsOn:STRING,Div2TotalGTime:STRING,Div2LongestGTime:STRING,Div2WheelsOff:STRING,Div2TailNum:STRING,Div3Airport:STRING,Div3AirportID:STRING,Div3AirportSeqID:STRING,Div3WheelsOn:STRING,Div3TotalGTime:STRING,Div3LongestGTime:STRING,Div3WheelsOff:STRING,Div3TailNum:STRING,Div4Airport:STRING,Div4AirportID:STRING,Div4AirportSeqID:STRING,Div4WheelsOn:STRING,Div4TotalGTime:STRING,Div4LongestGTime:STRING,Div4WheelsOff:STRING,Div4TailNum:STRING,Div5Airport:STRING,Div5AirportID:STRING,Div5AirportSeqID:STRING,Div5WheelsOn:STRING,Div5TotalGTime:STRING,Div5LongestGTime:STRING,Div5WheelsOff:STRING,Div5TailNum:STRING".split(
+            ',')
     ]
-    load_job = client.load_table_from_uri(gcsfile, table_ref, job_config=job_config)
+    load_job = client.load_table_from_uri(
+        gcsfile, table_ref, job_config=job_config)
     load_job.result()  # waits for table load to complete
 
     if load_job.state != 'DONE':
@@ -151,7 +157,8 @@ def next_month(bucketname):
     client = storage.Client()
     bucket = client.get_bucket(bucketname)
     blobs = list(bucket.list_blobs(prefix='flights/raw/'))
-    files = [blob.name for blob in blobs if 'csv' in blob.name]  # csv files only
+    # csv files only
+    files = [blob.name for blob in blobs if 'csv' in blob.name]
     lastfile = os.path.basename(files[-1])
     logging.debug('The latest file on GCS is {}'.format(lastfile))
     year = lastfile[:4]
@@ -169,18 +176,25 @@ def compute_next_month(year, month):
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(description='ingest flights data from BTS website to Google Cloud Storage')
-    parser.add_argument('--bucket', help='GCS bucket to upload data to', required=True)
-    parser.add_argument('--year', help='Example: 2015.  If not provided, defaults to getting next month')
-    parser.add_argument('--month', help='Specify 01 for January. If not provided, defaults to getting next month')
-    parser.add_argument('--debug', dest='debug', action='store_true', help='Specify if you want debug messages')
+    parser = argparse.ArgumentParser(
+        description='ingest flights data from BTS website to Google Cloud Storage')
+    parser.add_argument(
+        '--bucket', help='GCS bucket to upload data to', required=True)
+    parser.add_argument(
+        '--year', help='Example: 2015.  If not provided, defaults to getting next month')
+    parser.add_argument(
+        '--month', help='Specify 01 for January. If not provided, defaults to getting next month')
+    parser.add_argument('--debug', dest='debug', action='store_true',
+                        help='Specify if you want debug messages')
 
     try:
         args = parser.parse_args()
         if args.debug:
-            logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
+            logging.basicConfig(
+                format='%(levelname)s: %(message)s', level=logging.DEBUG)
         else:
-            logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+            logging.basicConfig(
+                format='%(levelname)s: %(message)s', level=logging.INFO)
 
         if args.year is None or args.month is None:
             year_, month_ = next_month(args.bucket)
@@ -189,6 +203,7 @@ if __name__ == '__main__':
             month_ = args.month
         logging.debug('Ingesting year={} month={}'.format(year_, month_))
         tableref, numrows = ingest(year_, month_, args.bucket)
-        logging.info('Success ... ingested {} rows to {}'.format(numrows, tableref))
+        logging.info(
+            'Success ... ingested {} rows to {}'.format(numrows, tableref))
     except Exception as e:
         logging.exception("Try again later?")
