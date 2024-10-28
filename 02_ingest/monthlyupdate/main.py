@@ -17,7 +17,8 @@
 import os
 import logging
 from flask import Flask
-from flask import request, escape
+from flask import request
+from markupsafe import escape
 from ingest_flights import ingest, next_month
 
 app = Flask(__name__)
@@ -27,8 +28,10 @@ app = Flask(__name__)
 def ingest_flights():
     # noinspection PyBroadException
     try:
-        logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
-        json = request.get_json(force=True) # https://stackoverflow.com/questions/53216177/http-triggering-cloud-function-with-cloud-scheduler/60615210#60615210
+        logging.basicConfig(
+            format='%(levelname)s: %(message)s', level=logging.INFO)
+        # https://stackoverflow.com/questions/53216177/http-triggering-cloud-function-with-cloud-scheduler/60615210#60615210
+        json = request.get_json(force=True)
 
         year = escape(json['year']) if 'year' in json else None
         month = escape(json['month']) if 'month' in json else None
