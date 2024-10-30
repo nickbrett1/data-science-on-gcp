@@ -7,11 +7,13 @@ PROJECT_ID=$(gcloud config get-value project)
 REGION=us-central1
 SVC_EMAIL=${SVC_ACCT}@${PROJECT_ID}.iam.gserviceaccount.com
 
-#gcloud functions deploy $URL \
-#    --entry-point ingest_flights --runtime python37 --trigger-http \
-#    --timeout 540s --service-account ${SVC_EMAIL} --no-allow-unauthenticated
+# Deploy as cloud function
+gcloud functions deploy $NAME \
+    --entry-point ingest_flights --runtime python311 --trigger-http \
+    --timeout 720s --service-account ${SVC_EMAIL} --no-allow-unauthenticated 
 
-gcloud run deploy $NAME --region $REGION --source=$(pwd) \
-    --platform=managed --service-account ${SVC_EMAIL} --no-allow-unauthenticated \
-    --timeout 12m \
+# Deploy as Docker container - Deprecated, moved to Cloud Function
+# gcloud run deploy $NAME --region $REGION --source=$(pwd) \
+#    --platform=managed --service-account ${SVC_EMAIL} --no-allow-unauthenticated \
+#    --timeout 12m \
 

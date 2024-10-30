@@ -6,6 +6,7 @@ PROJECT_ID=$(gcloud config get-value project)
 BUCKET=${PROJECT_ID}-cf-staging
 SVC_ACCT=svc-monthly-ingest
 SVC_EMAIL=${SVC_ACCT}@${PROJECT_ID}.iam.gserviceaccount.com
+REGION=us-central1
 
 SVC_URL=$(gcloud run services describe ingest-flights-monthly --format 'value(status.url)')
 echo $SVC_URL
@@ -25,7 +26,8 @@ gcloud scheduler jobs create http monthlyupdate \
        --max-retry-duration=2d \
        --min-backoff=12h \
        --headers="Content-Type=application/json" \
-       --message-body-from-file=/tmp/message
+       --message-body-from-file=/tmp/message \
+			 --location $REGION
 
 
 # To try this out, go to Console and do two things:

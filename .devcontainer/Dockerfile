@@ -1,5 +1,6 @@
+# gsutil works only upto python 3.11
 ARG VARIANT=
-FROM mcr.microsoft.com/devcontainers/python:3.12
+FROM mcr.microsoft.com/devcontainers/python:3.11
 
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 	&& apt-get -y install --no-install-recommends zsh-syntax-highlighting curl gnupg

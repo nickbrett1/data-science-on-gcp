@@ -14,23 +14,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import logging
-from flask import Flask
-from flask import request
 from markupsafe import escape
 from ingest_flights import ingest, next_month
+import functions_framework
+import google.cloud.logging
 
-app = Flask(__name__)
+# Instantiates a client
+client = google.cloud.logging.Client()
+
+# Retrieves a Cloud Logging handler based on the environment
+# you're running in and integrates the handler with the
+# Python logging module. By default this captures all logs
+# at INFO level and higher
+client.setup_logging()
 
 
-@app.route("/", methods=['POST'])
-def ingest_flights():
-    # noinspection PyBroadException
+@functions_framework.http
+def ingest_flights(request):
+    """HTTP Cloud Function
+    Args:
+            request (flask.Request): The request object
+            <https://flask.palletsprojects.com/en/1.1.x/api/#incoming-request-data>
+            Returns:
+                            The response text, or any set of values that can be turned into a
+                            Response object using `make_response`
+                            <https://flask.palletsprojects.com/en/1.1.x/api/#flask.make_response>.
+    """
     try:
         logging.basicConfig(
             format='%(levelname)s: %(message)s', level=logging.INFO)
-        # https://stackoverflow.com/questions/53216177/http-triggering-cloud-function-with-cloud-scheduler/60615210#60615210
         json = request.get_json(force=True)
 
         year = escape(json['year']) if 'year' in json else None
@@ -41,12 +54,10 @@ def ingest_flights():
             year, month = next_month(bucket)
         logging.debug('Ingesting year={} month={}'.format(year, month))
         tableref, numrows = ingest(year, month, bucket)
-        ok = 'Success ... ingested {} rows to {}'.format(numrows, tableref)
+        ok = 'Success ... ingested {} rows to {}'.format(
+            numrows, tableref)
         logging.info(ok)
         return ok
     except Exception as e:
         logging.exception("Failed to ingest ... try again later?")
-
-
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+        return "Failure", 500
