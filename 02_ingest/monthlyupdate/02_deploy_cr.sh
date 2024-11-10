@@ -10,7 +10,8 @@ SVC_EMAIL=${SVC_ACCT}@${PROJECT_ID}.iam.gserviceaccount.com
 # Deploy as cloud function
 gcloud functions deploy $NAME \
     --entry-point ingest_flights --runtime python311 --trigger-http \
-    --timeout 720s --service-account ${SVC_EMAIL} --no-allow-unauthenticated 
+    --timeout 720s --service-account ${SVC_EMAIL} --no-allow-unauthenticated \
+		--memory 500MiB
 
 # Deploy as Docker container - Deprecated, moved to Cloud Function
 # gcloud run deploy $NAME --region $REGION --source=$(pwd) \
