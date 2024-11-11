@@ -7,6 +7,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 
 ADD .zshrc /home/node
 ADD .p10k.zsh /home/node
+ADD .boto /home/vscode
 
 # Downloading gcloud package
 RUN curl https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.tar.gz > /tmp/google-cloud-sdk.tar.gz
