@@ -4,4 +4,4 @@ __pycache__/
 .ipynb_checkpoints
 02_ingest/data
 02_ingest/monthlyupdate/ds-on-gcp-439400-5b22f6f92855.json
-
+beam-temp-*

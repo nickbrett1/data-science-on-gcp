@@ -20,7 +20,8 @@
 		"vscode": {
 			"extensions": [
 				"googlecloudtools.cloudcode",
-				"ms-azuretools.vscode-docker"
+				"ms-azuretools.vscode-docker",
+				"mechatroner.rainbow-csv"
 			]
 		}
 	},

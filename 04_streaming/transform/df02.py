@@ -15,29 +15,47 @@
 # limitations under the License.
 
 import apache_beam as beam
-import csv
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
-def addtimezone(lat, lon):
-    try:
-        import timezonefinder
-        tf = timezonefinder.TimezoneFinder()
-        tz = tf.timezone_at(lng=float(lon), lat=float(lat))
-        if tz is None:
-            tz = 'UTC'
-        return lat, lon, tz
-    except ValueError:
-        return lat, lon, 'TIMEZONE'  # header
+def readline(line):
+    import csv
+    result = csv.reader([line])
+    return next(result)
+
+
+def extractfields(fields):
+    def addtimezone(lat, lon):
+        try:
+            import timezonefinder
+            tf = timezonefinder.TimezoneFinder()
+            tz = tf.timezone_at(lng=float(lon), lat=float(lat))
+            if tz is None:
+                tz = 'UTC'
+            return lat, lon, tz
+        except ValueError:
+            return lat, lon, 'TIMEZONE'  # header
+
+    timezone = addtimezone(fields[21], fields[26])
+    return (fields[0], timezone)
+
+
+def joinfields(f):
+    return '{},{}'.format(f[0], ','.join(f[1]))
 
 
 if __name__ == '__main__':
-    with beam.Pipeline('DirectRunner') as pipeline:
+    with beam.Pipeline('DirectRunner', options=beam.options.pipeline_options.PipelineOptions(
+            direct_running_mode='in_memory')) as pipeline:
+
         airports = (pipeline
-                    | beam.io.ReadFromText('airports.csv.gz')
+                    | beam.io.ReadFromText('airports.csv')
                     | beam.Filter(lambda line: "United States" in line)
-                    | beam.Map(lambda line: next(csv.reader([line])))
-                    | beam.Map(lambda fields: (fields[0], addtimezone(fields[21], fields[26])))
+                    | beam.Map(readline)
+                    | beam.Map(extractfields)
                     )
 
-        airports | beam.Map(lambda f: '{},{}'.format(f[0], ','.join(f[1]))) | beam.io.textio.WriteToText(
+        airports | beam.Map(joinfields) | beam.io.textio.WriteToText(
             'airports_with_tz')
