@@ -16,16 +16,17 @@
 
 import apache_beam as beam
 import logging
-import csv
 import json
+import timezonefinder
+import csv
+
+logging.basicConfig(level=logging.INFO)
 
 
 def addtimezone(lat, lon):
     try:
-        import timezonefinder
         tf = timezonefinder.TimezoneFinder()
         return lat, lon, tf.timezone_at(lng=float(lon), lat=float(lat))
-        # return (lat, lon, 'America/Los_Angeles') # FIXME
     except ValueError:
         return lat, lon, 'TIMEZONE'  # header
 
@@ -33,11 +34,14 @@ def addtimezone(lat, lon):
 def as_utc(date, hhmm, tzone):
     try:
         if len(hhmm) > 0 and tzone is not None:
-            import datetime, pytz
+            import datetime
+            import pytz
             loc_tz = pytz.timezone(tzone)
-            loc_dt = loc_tz.localize(datetime.datetime.strptime(date, '%Y-%m-%d'), is_dst=False)
+            loc_dt = loc_tz.localize(datetime.datetime.strptime(
+                date, '%Y-%m-%d'), is_dst=False)
             # can't just parse hhmm because the data contains 2400 and the like ...
-            loc_dt += datetime.timedelta(hours=int(hhmm[:2]), minutes=int(hhmm[2:]))
+            loc_dt += datetime.timedelta(
+                hours=int(hhmm[:2]), minutes=int(hhmm[2:]))
             utc_dt = loc_dt.astimezone(pytz.utc)
             return utc_dt.strftime('%Y-%m-%d %H:%M:%S')
         else:
@@ -63,13 +67,14 @@ def tz_correct(line, airport_timezones):
 
         yield json.dumps(fields)
     except KeyError as e:
-        logging.exception(" Ignoring " + line + " because airport is not known")
+        logging.exception(" Ignoring " + line +
+                          " because airport is not known")
 
 
 if __name__ == '__main__':
     with beam.Pipeline('DirectRunner') as pipeline:
         airports = (pipeline
-                    | 'airports:read' >> beam.io.ReadFromText('airports.csv.gz')
+                    | 'airports:read' >> beam.io.ReadFromText('airports.csv')
                     | beam.Filter(lambda line: "United States" in line)
                     | 'airports:fields' >> beam.Map(lambda line: next(csv.reader([line])))
                     | 'airports:tz' >> beam.Map(lambda fields: (fields[0], addtimezone(fields[21], fields[26])))

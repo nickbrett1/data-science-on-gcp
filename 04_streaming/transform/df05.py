@@ -39,11 +39,14 @@ def as_utc(date, hhmm, tzone):
    """
     try:
         if len(hhmm) > 0 and tzone is not None:
-            import datetime, pytz
+            import datetime
+            import pytz
             loc_tz = pytz.timezone(tzone)
-            loc_dt = loc_tz.localize(datetime.datetime.strptime(date, '%Y-%m-%d'), is_dst=False)
+            loc_dt = loc_tz.localize(datetime.datetime.strptime(
+                date, '%Y-%m-%d'), is_dst=False)
             # can't just parse hhmm because the data contains 2400 and the like ...
-            loc_dt += datetime.timedelta(hours=int(hhmm[:2]), minutes=int(hhmm[2:]))
+            loc_dt += datetime.timedelta(
+                hours=int(hhmm[:2]), minutes=int(hhmm[2:]))
             utc_dt = loc_dt.astimezone(pytz.utc)
             return utc_dt.strftime(DATETIME_FORMAT), loc_dt.utcoffset().total_seconds()
         else:
@@ -72,9 +75,11 @@ def tz_correct(fields, airport_timezones):
         arr_timezone = airport_timezones[arr_airport_id][2]
 
         for f in ["CRS_DEP_TIME", "DEP_TIME", "WHEELS_OFF"]:
-            fields[f], deptz = as_utc(fields["FL_DATE"], fields[f], dep_timezone)
+            fields[f], deptz = as_utc(
+                fields["FL_DATE"], fields[f], dep_timezone)
         for f in ["WHEELS_ON", "CRS_ARR_TIME", "ARR_TIME"]:
-            fields[f], arrtz = as_utc(fields["FL_DATE"], fields[f], arr_timezone)
+            fields[f], arrtz = as_utc(
+                fields["FL_DATE"], fields[f], arr_timezone)
 
         for f in ["WHEELS_OFF", "WHEELS_ON", "CRS_ARR_TIME", "ARR_TIME"]:
             fields[f] = add_24h_if_before(fields[f], fields["DEP_TIME"])
@@ -108,7 +113,7 @@ def get_next_event(fields):
 def run():
     with beam.Pipeline('DirectRunner') as pipeline:
         airports = (pipeline
-                    | 'airports:read' >> beam.io.ReadFromText('airports.csv.gz')
+                    | 'airports:read' >> beam.io.ReadFromText('airports.csv')
                     | beam.Filter(lambda line: "United States" in line)
                     | 'airports:fields' >> beam.Map(lambda line: next(csv.reader([line])))
                     | 'airports:tz' >> beam.Map(lambda fields: (fields[0], addtimezone(fields[21], fields[26])))

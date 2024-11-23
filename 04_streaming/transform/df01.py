@@ -20,7 +20,7 @@ import csv
 if __name__ == '__main__':
     with beam.Pipeline('DirectRunner') as pipeline:
         airports = (pipeline
-                    | beam.io.ReadFromText('airports.csv.gz')
+                    | beam.io.ReadFromText('airports.csv')
                     | beam.Map(lambda line: next(csv.reader([line])))
                     | beam.Map(lambda fields: (fields[0], (fields[21], fields[26])))
                     )
