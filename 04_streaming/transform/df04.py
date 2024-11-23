@@ -18,15 +18,13 @@ import apache_beam as beam
 import logging
 import csv
 import json
+import timezonefinder
 
 
 def addtimezone(lat, lon):
     try:
-        import timezonefinder
         tf = timezonefinder.TimezoneFinder()
-        lat = float(lat)
-        lon = float(lon)
-        return lat, lon, tf.timezone_at(lng=lon, lat=lat)
+        return lat, lon, tf.timezone_at(lng=float(lon), lat=float(lat))
     except ValueError:
         return lat, lon, 'TIMEZONE'  # header
 
