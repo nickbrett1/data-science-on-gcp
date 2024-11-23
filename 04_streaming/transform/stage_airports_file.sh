@@ -9,8 +9,8 @@ fi
 BUCKET=$1
 PROJECT=$(gcloud config get-value project)
 
-gsutil cp airports.csv.gz gs://${BUCKET}/flights/airports/airports.csv.gz
+gsutil cp airports.csv gs://${BUCKET}/flights/airports/airports.csv
 
 bq --project_id=$PROJECT load \
    --autodetect --replace --source_format=CSV \
-   dsongcp.airports gs://${BUCKET}/flights/airports/airports.csv.gz
+   dsongcp.airports gs://${BUCKET}/flights/airports/airports.csv
