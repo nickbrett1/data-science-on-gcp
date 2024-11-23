@@ -18,18 +18,15 @@ import apache_beam as beam
 import logging
 import csv
 import json
-
+import timezonefinder
 
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 
 def addtimezone(lat, lon):
     try:
-        import timezonefinder
         tf = timezonefinder.TimezoneFinder()
-        lat = float(lat)
-        lon = float(lon)
-        return lat, lon, tf.timezone_at(lng=lon, lat=lat)
+        return lat, lon, tf.timezone_at(lng=float(lon), lat=float(lat))
     except ValueError:
         return lat, lon, 'TIMEZONE'  # header
 
@@ -40,11 +37,14 @@ def as_utc(date, hhmm, tzone):
     """
     try:
         if len(hhmm) > 0 and tzone is not None:
-            import datetime, pytz
+            import datetime
+            import pytz
             loc_tz = pytz.timezone(tzone)
-            loc_dt = loc_tz.localize(datetime.datetime.strptime(date, '%Y-%m-%d'), is_dst=False)
+            loc_dt = loc_tz.localize(datetime.datetime.strptime(
+                date, '%Y-%m-%d'), is_dst=False)
             # can't just parse hhmm because the data contains 2400 and the like ...
-            loc_dt += datetime.timedelta(hours=int(hhmm[:2]), minutes=int(hhmm[2:]))
+            loc_dt += datetime.timedelta(
+                hours=int(hhmm[:2]), minutes=int(hhmm[2:]))
             utc_dt = loc_dt.astimezone(pytz.utc)
             return utc_dt.strftime(DATETIME_FORMAT), loc_dt.utcoffset().total_seconds()
         else:
@@ -65,7 +65,8 @@ def add_24h_if_before(arrtime, deptime):
 
 
 def tz_correct(fields, airport_timezones):
-    fields['FL_DATE'] = fields['FL_DATE'].strftime('%Y-%m-%d')  # convert to a string so JSON code works
+    fields['FL_DATE'] = fields['FL_DATE'].strftime(
+        '%Y-%m-%d')  # convert to a string so JSON code works
     try:
         # convert all times to UTC
         dep_airport_id = fields["ORIGIN_AIRPORT_SEQ_ID"]
@@ -75,9 +76,11 @@ def tz_correct(fields, airport_timezones):
         arr_timezone = airport_timezones[arr_airport_id][2]
 
         for f in ["CRS_DEP_TIME", "DEP_TIME", "WHEELS_OFF"]:
-            fields[f], deptz = as_utc(fields["FL_DATE"], fields[f], dep_timezone)
+            fields[f], deptz = as_utc(
+                fields["FL_DATE"], fields[f], dep_timezone)
         for f in ["WHEELS_ON", "CRS_ARR_TIME", "ARR_TIME"]:
-            fields[f], arrtz = as_utc(fields["FL_DATE"], fields[f], arr_timezone)
+            fields[f], arrtz = as_utc(
+                fields["FL_DATE"], fields[f], arr_timezone)
 
         for f in ["WHEELS_OFF", "WHEELS_ON", "CRS_ARR_TIME", "ARR_TIME"]:
             fields[f] = add_24h_if_before(fields[f], fields["DEP_TIME"])
@@ -90,7 +93,7 @@ def tz_correct(fields, airport_timezones):
         fields["ARR_AIRPORT_TZOFFSET"] = arrtz
         yield fields
     except KeyError:
-        #logging.exception(f"Ignoring {fields} because airport is not known")
+        # logging.exception(f"Ignoring {fields} because airport is not known")
         pass
 
     except KeyError:
@@ -132,7 +135,8 @@ def run(project, bucket):
         '--temp_location=gs://{0}/flights/temp/'.format(bucket),
         '--runner=DirectRunner'
     ]
-    airports_filename = 'gs://{}/flights/airports/airports.csv.gz'.format(bucket)
+    airports_filename = 'gs://{}/flights/airports/airports.csv'.format(
+        bucket)
     flights_output = 'gs://{}/flights/tzcorr/all_flights'.format(bucket)
 
     with beam.Pipeline(argv=argv) as pipeline:
@@ -145,7 +149,7 @@ def run(project, bucket):
 
         flights = (pipeline
                    | 'flights:read' >> beam.io.ReadFromBigQuery(
-                    query='SELECT * FROM dsongcp.flights WHERE rand() < 0.001', use_standard_sql=True)
+                       query='SELECT * FROM dsongcp.flights WHERE rand() < 0.001', use_standard_sql=True)
                    | 'flights:tzcorr' >> beam.FlatMap(tz_correct, beam.pvalue.AsDict(airports))
                    )
 
@@ -153,7 +157,7 @@ def run(project, bucket):
          | 'flights:tostring' >> beam.Map(lambda fields: json.dumps(fields))
          | 'flights:gcsout' >> beam.io.textio.WriteToText(flights_output)
          )
-        
+
         flights_schema = ','.join([
             'FL_DATE:date',
             'UNIQUE_CARRIER:string',
@@ -181,37 +185,40 @@ def run(project, bucket):
             'ARR_AIRPORT_LON:float',
             'ARR_AIRPORT_TZOFFSET:float',
             'Year:string'])
-        
+
         # autodetect on JSON works, but is less reliable
-        #flights_schema = 'SCHEMA_AUTODETECT'
-        
-        (flights 
+        # flights_schema = 'SCHEMA_AUTODETECT'
+
+        (flights
          | 'flights:bqout' >> beam.io.WriteToBigQuery(
-                'dsongcp.flights_tzcorr', 
-                schema=flights_schema,
-                write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
-                create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED
-                )
-        )
-        
+             'dsongcp.flights_tzcorr',
+             schema=flights_schema,
+             write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
+             create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED
+         )
+         )
+
         events = flights | beam.FlatMap(get_next_event)
-        events_schema = ','.join([flights_schema, 'EVENT_TYPE:string,EVENT_TIME:timestamp,EVENT_DATA:string'])
+        events_schema = ','.join(
+            [flights_schema, 'EVENT_TYPE:string,EVENT_TIME:timestamp,EVENT_DATA:string'])
 
         (events
          | 'events:totablerow' >> beam.Map(lambda fields: create_event_row(fields))
          | 'events:bqout' >> beam.io.WriteToBigQuery(
-                'dsongcp.flights_simevents', schema=events_schema,
-                write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
-                create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED
-                )
-        )
-        
+             'dsongcp.flights_simevents', schema=events_schema,
+             write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
+             create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED
+         )
+         )
+
+
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Run pipeline on the cloud')
-    parser.add_argument('-p', '--project', help='Unique project ID', required=True)
-    parser.add_argument('-b', '--bucket', help='Bucket where gs://BUCKET/flights/airports/airports.csv.gz exists',
+    parser.add_argument('-p', '--project',
+                        help='Unique project ID', required=True)
+    parser.add_argument('-b', '--bucket', help='Bucket where gs://BUCKET/flights/airports/airports.csv exists',
                         required=True)
 
     args = vars(parser.parse_args())
