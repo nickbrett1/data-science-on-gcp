@@ -5,3 +5,4 @@ __pycache__/
 02_ingest/data
 02_ingest/monthlyupdate/ds-on-gcp-439400-5b22f6f92855.json
 beam-temp-*
+*.egg-info

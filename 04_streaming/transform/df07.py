@@ -18,17 +18,15 @@ import apache_beam as beam
 import logging
 import csv
 import json
+import timezonefinder
 
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 
 def addtimezone(lat, lon):
     try:
-        import timezonefinder
         tf = timezonefinder.TimezoneFinder()
-        lat = float(lat)
-        lon = float(lon)
-        return lat, lon, tf.timezone_at(lng=lon, lat=lat)
+        return lat, lon, tf.timezone_at(lng=float(lon), lat=float(lat))
     except ValueError:
         return lat, lon, 'TIMEZONE'  # header
 
@@ -39,11 +37,14 @@ def as_utc(date, hhmm, tzone):
     """
     try:
         if len(hhmm) > 0 and tzone is not None:
-            import datetime, pytz
+            import datetime
+            import pytz
             loc_tz = pytz.timezone(tzone)
-            loc_dt = loc_tz.localize(datetime.datetime.strptime(date, '%Y-%m-%d'), is_dst=False)
+            loc_dt = loc_tz.localize(datetime.datetime.strptime(
+                date, '%Y-%m-%d'), is_dst=False)
             # can't just parse hhmm because the data contains 2400 and the like ...
-            loc_dt += datetime.timedelta(hours=int(hhmm[:2]), minutes=int(hhmm[2:]))
+            loc_dt += datetime.timedelta(
+                hours=int(hhmm[:2]), minutes=int(hhmm[2:]))
             utc_dt = loc_dt.astimezone(pytz.utc)
             return utc_dt.strftime(DATETIME_FORMAT), loc_dt.utcoffset().total_seconds()
         else:
@@ -71,7 +72,8 @@ def airport_timezone(airport_id, airport_timezones):
 
 
 def tz_correct(fields, airport_timezones):
-    fields['FL_DATE'] = fields['FL_DATE'].strftime('%Y-%m-%d')  # convert to a string so JSON code works
+    fields['FL_DATE'] = fields['FL_DATE'].strftime(
+        '%Y-%m-%d')  # convert to a string so JSON code works
 
     # convert all times to UTC
     dep_airport_id = fields["ORIGIN_AIRPORT_SEQ_ID"]
@@ -135,7 +137,8 @@ def run(project, bucket, region):
         '--region={}'.format(region),
         '--runner=DataflowRunner'
     ]
-    airports_filename = 'gs://{}/flights/airports/airports.csv.gz'.format(bucket)
+    airports_filename = 'gs://{}/flights/airports/airports.csv'.format(
+        bucket)
     flights_output = 'gs://{}/flights/tzcorr/all_flights'.format(bucket)
 
     with beam.Pipeline(argv=argv) as pipeline:
@@ -148,7 +151,7 @@ def run(project, bucket, region):
 
         flights = (pipeline
                    | 'flights:read' >> beam.io.ReadFromBigQuery(
-                    query='SELECT * FROM dsongcp.flights', use_standard_sql=True)
+                       query='SELECT * FROM dsongcp.flights', use_standard_sql=True)
                    | 'flights:tzcorr' >> beam.FlatMap(tz_correct, beam.pvalue.AsDict(airports))
                    )
 
@@ -172,15 +175,16 @@ def run(project, bucket, region):
         )
 
         events = flights | beam.FlatMap(get_next_event)
-        events_schema = ','.join([flights_schema, 'EVENT_TYPE:string,EVENT_TIME:timestamp,EVENT_DATA:string'])
+        events_schema = ','.join(
+            [flights_schema, 'EVENT_TYPE:string,EVENT_TIME:timestamp,EVENT_DATA:string'])
 
         (events
          | 'events:totablerow' >> beam.Map(lambda fields: create_event_row(fields))
          | 'events:bqout' >> beam.io.WriteToBigQuery(
-                    'dsongcp.flights_simevents', schema=events_schema,
-                    write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
-                    create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED
-                )
+             'dsongcp.flights_simevents', schema=events_schema,
+             write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
+             create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED
+         )
          )
 
 
@@ -188,8 +192,9 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Run pipeline on the cloud')
-    parser.add_argument('-p', '--project', help='Unique project ID', required=True)
-    parser.add_argument('-b', '--bucket', help='Bucket where gs://BUCKET/flights/airports/airports.csv.gz exists',
+    parser.add_argument('-p', '--project',
+                        help='Unique project ID', required=True)
+    parser.add_argument('-b', '--bucket', help='Bucket where gs://BUCKET/flights/airports/airports.csv exists',
                         required=True)
     parser.add_argument('-r', '--region',
                         help='Region in which to run the Dataflow job. Choose the same region as your bucket.',
