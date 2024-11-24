@@ -54,15 +54,16 @@ def run(project, bucket, region):
             'DIVERTED:boolean,DISTANCE:float',
             'DEP_AIRPORT_LAT:float,DEP_AIRPORT_LON:float,DEP_AIRPORT_TZOFFSET:float',
             'ARR_AIRPORT_LAT:float,ARR_AIRPORT_LON:float,ARR_AIRPORT_TZOFFSET:float'])
-        events_schema = ','.join([flights_schema, 'EVENT_TYPE:string,EVENT_TIME:timestamp'])
+        events_schema = ','.join(
+            [flights_schema, 'EVENT_TYPE:string,EVENT_TIME:timestamp'])
 
         schema = events_schema
 
         (all_events
          | 'bqout' >> beam.io.WriteToBigQuery(
-                    'dsongcp.streaming_events', schema=schema,
-                    create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED
-                )
+             'dsongcp.streaming_events', schema=schema,
+             create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED
+         )
          )
 
 
@@ -70,8 +71,9 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Run pipeline on the cloud')
-    parser.add_argument('-p', '--project', help='Unique project ID', required=True)
-    parser.add_argument('-b', '--bucket', help='Bucket where gs://BUCKET/flights/airports/airports.csv.gz exists',
+    parser.add_argument('-p', '--project',
+                        help='Unique project ID', required=True)
+    parser.add_argument('-b', '--bucket', help='Bucket where gs://BUCKET/flights/airports/airports.csv exists',
                         required=True)
     parser.add_argument('-r', '--region',
                         help='Region in which to run the Dataflow job. Choose the same region as your bucket.',
