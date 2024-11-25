@@ -26,7 +26,6 @@ def run(project, bucket, region):
         '--save_main_session',
         '--staging_location=gs://{0}/flights/staging/'.format(bucket),
         '--temp_location=gs://{0}/flights/temp/'.format(bucket),
-        '--setup_file=./setup.py',
         '--autoscaling_algorithm=THROUGHPUT_BASED',
         '--max_num_workers=8',
         '--region={}'.format(region),

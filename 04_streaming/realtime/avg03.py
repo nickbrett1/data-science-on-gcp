@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import apache_beam as beam
-import logging
 import json
 import numpy as np
 
@@ -23,10 +22,12 @@ DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 
 def compute_stats(airport, events):
-    arrived = [event['ARR_DELAY'] for event in events if event['EVENT_TYPE'] == 'arrived']
+    arrived = [event['ARR_DELAY']
+               for event in events if event['EVENT_TYPE'] == 'arrived']
     avg_arr_delay = float(np.mean(arrived)) if len(arrived) > 0 else None
 
-    departed = [event['DEP_DELAY'] for event in events if event['EVENT_TYPE'] == 'departed']
+    departed = [event['DEP_DELAY']
+                for event in events if event['EVENT_TYPE'] == 'departed']
     avg_dep_delay = float(np.mean(departed)) if len(departed) > 0 else None
 
     num_flights = len(events)
@@ -72,7 +73,7 @@ def run(project, bucket, region):
 
             events[event_name] = (pipeline
                                   | 'read:{}'.format(event_name) >> beam.io.ReadFromPubSub(
-                                                topic=topic_name, timestamp_attribute='EventTimeStamp')
+                                      topic=topic_name, timestamp_attribute='EventTimeStamp')
                                   | 'parse:{}'.format(event_name) >> beam.Map(lambda s: json.loads(s))
                                   )
 
@@ -83,15 +84,15 @@ def run(project, bucket, region):
                  | 'window' >> beam.WindowInto(beam.window.SlidingWindows(60 * 60, 5 * 60))
                  | 'group' >> beam.GroupByKey()
                  | 'stats' >> beam.Map(lambda x: compute_stats(x[0], x[1]))
-        )
+                 )
 
         stats_schema = ','.join(['AIRPORT:string,AVG_ARR_DELAY:float,AVG_DEP_DELAY:float',
                                  'NUM_FLIGHTS:int64,START_TIME:timestamp,END_TIME:timestamp'])
         (stats
          | 'bqout' >> beam.io.WriteToBigQuery(
-                    'dsongcp.streaming_delays', schema=stats_schema,
-                    create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED
-                )
+             'dsongcp.streaming_delays', schema=stats_schema,
+             create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED
+         )
          )
 
 
@@ -99,7 +100,8 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Run pipeline on the cloud')
-    parser.add_argument('-p', '--project', help='Unique project ID', required=True)
+    parser.add_argument('-p', '--project',
+                        help='Unique project ID', required=True)
     parser.add_argument('-b', '--bucket', help='Bucket where gs://BUCKET/flights/airports/airports.csv.gz exists',
                         required=True)
     parser.add_argument('-r', '--region',
