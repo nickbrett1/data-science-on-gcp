@@ -17,6 +17,7 @@ gsutil cp /tmp/install_on_cluster.sh $INSTALL
 
 # create cluster
 gcloud dataproc clusters create ch6cluster \
+  --public-ip-address \
   --enable-component-gateway \
   --region ${REGION} --zone ${REGION}-a \
   --master-machine-type n1-standard-4 \
