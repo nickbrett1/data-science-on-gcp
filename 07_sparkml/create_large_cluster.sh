@@ -15,7 +15,7 @@ gcloud dataproc clusters create ch7cluster \
   --region ${REGION} --zone ${REGION}-a \
   --master-machine-type n1-standard-4 \
   --master-boot-disk-size 500 \
-  --num-workers 30 --num-secondary-workers 20 \
+  --num-workers 3 --num-secondary-workers 1 \
   --worker-machine-type n1-standard-8 \
   --worker-boot-disk-size 500 \
   --project $PROJECT \
