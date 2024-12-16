@@ -31,7 +31,7 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "python3 -m pip install pydot tensorflow==2.12 bigquery-magics matplotlib seaborn pandas ipykernel && python3 -m pip install --upgrade pip && python3 -m pip cache purge && python3 -m pip install --upgrade timezonefinder pytz 'apache-beam[gcp]' && pip3 install -r 02_ingest/monthlyupdate/requirements.txt && gcloud auth login && gcloud config set project ds-on-gcp-439400 && gcloud config set run/region us-central1 && gcloud auth application-default login"
+	"postCreateCommand": "python3 -m pip install google-cloud-aiplatform cloudml-hypertune kfp pydot tensorflow==2.12 bigquery-magics matplotlib seaborn pandas ipykernel && python3 -m pip install --upgrade pip && python3 -m pip cache purge && python3 -m pip install --upgrade timezonefinder pytz 'apache-beam[gcp]' && pip3 install -r 02_ingest/monthlyupdate/requirements.txt && gcloud auth login && gcloud config set project ds-on-gcp-439400 && gcloud config set run/region us-central1 && gcloud auth application-default login"
 	// Configure tool-specific properties.
 	// "customizations": {},
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
