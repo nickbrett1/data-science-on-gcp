@@ -22,7 +22,8 @@
 				"googlecloudtools.cloudcode",
 				"ms-azuretools.vscode-docker",
 				"mechatroner.rainbow-csv",
-				"ms-toolsai.jupyter"
+				"ms-toolsai.jupyter",
+				"GitHub.copilot"
 			]
 		}
 	},

@@ -20,20 +20,23 @@ import tensorflow as tf
 from google.cloud import aiplatform
 from google.cloud.aiplatform import gapic as aip
 from google.cloud.aiplatform import hyperparameter_tuning as hpt
-from kfp.v2 import compiler, dsl
 
 ENDPOINT_NAME = 'flights'
 
 
 def train_custom_model(data_set, timestamp, develop_mode, cpu_only_mode, tf_version, extra_args=None):
     # Set up training and deployment infra
-    
+
     if cpu_only_mode:
-        train_image='us-docker.pkg.dev/vertex-ai/training/tf-cpu.{}:latest'.format(tf_version)
-        deploy_image='us-docker.pkg.dev/vertex-ai/prediction/tf2-cpu.{}:latest'.format(tf_version)
+        train_image = 'us-docker.pkg.dev/vertex-ai/training/tf-cpu.{}:latest'.format(
+            tf_version)
+        deploy_image = 'us-docker.pkg.dev/vertex-ai/prediction/tf2-cpu.{}:latest'.format(
+            tf_version)
     else:
-        train_image = "us-docker.pkg.dev/vertex-ai/training/tf-gpu.{}:latest".format(tf_version)
-        deploy_image = "us-docker.pkg.dev/vertex-ai/prediction/tf2-cpu.{}:latest".format(tf_version)
+        train_image = "us-docker.pkg.dev/vertex-ai/training/tf-gpu.{}:latest".format(
+            tf_version)
+        deploy_image = "us-docker.pkg.dev/vertex-ai/prediction/tf2-cpu.{}:latest".format(
+            tf_version)
 
     # train
     model_display_name = '{}-{}'.format(ENDPOINT_NAME, timestamp)
@@ -51,7 +54,7 @@ def train_custom_model(data_set, timestamp, develop_mode, cpu_only_mode, tf_vers
         model_args += ['--develop']
     if extra_args:
         model_args += extra_args
-    
+
     if cpu_only_mode:
         model = job.run(
             dataset=data_set,
@@ -96,7 +99,8 @@ def train_automl_model(data_set, timestamp, develop_mode):
         budget_milli_node_hours=(300 if develop_mode else 2000),
         disable_early_stopping=False,
         export_evaluated_data_items=True,
-        export_evaluated_data_items_bigquery_destination_uri='{}:dsongcp.ch9_automl_evaluated'.format(PROJECT),
+        export_evaluated_data_items_bigquery_destination_uri='{}:dsongcp.ch9_automl_evaluated'.format(
+            PROJECT),
         export_evaluated_data_items_override_destination=True,
         sync=develop_mode
     )
@@ -106,9 +110,11 @@ def train_automl_model(data_set, timestamp, develop_mode):
 def do_hyperparameter_tuning(data_set, timestamp, develop_mode, cpu_only_mode, tf_version):
     # Vertex AI services require regional API endpoints.
     if cpu_only_mode:
-        train_image='us-docker.pkg.dev/vertex-ai/training/tf-cpu.{}:latest'.format(tf_version)
-    else: 
-        train_image = "us-docker.pkg.dev/vertex-ai/training/tf-gpu.{}:latest".format(tf_version)
+        train_image = 'us-docker.pkg.dev/vertex-ai/training/tf-cpu.{}:latest'.format(
+            tf_version)
+    else:
+        train_image = "us-docker.pkg.dev/vertex-ai/training/tf-gpu.{}:latest".format(
+            tf_version)
 
     # a single trial job
     model_display_name = '{}-{}'.format(ENDPOINT_NAME, timestamp)
@@ -165,7 +171,8 @@ def do_hyperparameter_tuning(data_set, timestamp, develop_mode, cpu_only_mode, t
     hparam_job.run(sync=True)  # has to finish before we can get trials.
 
     # get the parameters corresponding to the best trial
-    best = sorted(hparam_job.trials, key=lambda x: x.final_measurement.metrics[0].value)[0]
+    best = sorted(hparam_job.trials,
+                  key=lambda x: x.final_measurement.metrics[0].value)[0]
     logging.info('Best trial: {}'.format(best))
     best_params = []
     for param in best.parameters:
@@ -184,11 +191,9 @@ def do_hyperparameter_tuning(data_set, timestamp, develop_mode, cpu_only_mode, t
     return train_custom_model(data_set, timestamp, develop_mode, cpu_only_mode, tf_version, extra_args=best_params)
 
 
-@dsl.pipeline(name="flights-ch9-pipeline",
-              description="ds-on-gcp ch9 flights pipeline"
-)
 def main():
-    aiplatform.init(project=PROJECT, location=REGION, staging_bucket='gs://{}'.format(BUCKET))
+    aiplatform.init(project=PROJECT, location=REGION,
+                    staging_bucket='gs://{}'.format(BUCKET))
 
     # create data set
     all_files = tf.io.gfile.glob('gs://{}/ch9/data/all*.csv'.format(BUCKET))
@@ -206,9 +211,11 @@ def main():
     if AUTOML:
         model = train_automl_model(data_set, TIMESTAMP, DEVELOP_MODE)
     elif NUM_HPARAM_TRIALS > 1:
-        model = do_hyperparameter_tuning(data_set, TIMESTAMP, DEVELOP_MODE, CPU_ONLY_MODE, tf_version)
+        model = do_hyperparameter_tuning(
+            data_set, TIMESTAMP, DEVELOP_MODE, CPU_ONLY_MODE, tf_version)
     else:
-        model = train_custom_model(data_set, TIMESTAMP, DEVELOP_MODE, CPU_ONLY_MODE, tf_version)
+        model = train_custom_model(
+            data_set, TIMESTAMP, DEVELOP_MODE, CPU_ONLY_MODE, tf_version)
 
     # create endpoint if it doesn't already exist
     endpoints = aiplatform.Endpoint.list(
@@ -236,19 +243,6 @@ def main():
 
     if DEVELOP_MODE:
         model.wait()
-
-
-def run_pipeline():
-    compiler.Compiler().compile(pipeline_func=main, package_path='flights_pipeline.json')
-
-    job = aip.PipelineJob(
-        display_name="{}-pipeline".format(ENDPOINT_NAME),
-        template_path="{}_pipeline.json".format(ENDPOINT_NAME),
-        pipeline_root="{}/pipeline_root/intro".format(BUCKET),
-        enable_caching=False
-    )
-
-    job.run()
 
 
 if __name__ == '__main__':
@@ -310,12 +304,9 @@ if __name__ == '__main__':
     REGION = args['region']
     DEVELOP_MODE = args['develop']
     CPU_ONLY_MODE = args['cpuonly']
-    TF_VERSION = args['tfversion']    
+    TF_VERSION = args['tfversion']
     AUTOML = args['automl']
     NUM_HPARAM_TRIALS = args['num_hparam_trials']
     TIMESTAMP = datetime.now().strftime("%Y%m%d%H%M%S")
 
-    if args['pipeline']:
-        run_pipeline()
-    else:
-        main()
+    main()
