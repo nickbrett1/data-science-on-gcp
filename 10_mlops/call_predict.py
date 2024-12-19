@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys, json
+import sys
 from google.cloud import aiplatform
 from google.cloud.aiplatform import gapic as aip
 
@@ -27,9 +27,9 @@ if __name__ == '__main__':
     if len(endpoints) == 0:
         print("No endpoint named {}".format(ENDPOINT_NAME))
         sys.exit(-1)
-    
+
     endpoint = endpoints[0]
-    
+
     input_data = {"instances": [
         {"dep_hour": 2, "is_weekday": 1, "dep_delay": 40, "taxi_out": 17, "distance": 41, "carrier": "AS",
          "dep_airport_lat": 58.42527778, "dep_airport_lon": -135.7075, "arr_airport_lat": 58.35472222,
@@ -41,6 +41,3 @@ if __name__ == '__main__':
 
     preds = endpoint.predict(input_data['instances'])
     print(preds)
-    
-
-
