@@ -8,3 +8,4 @@ ENDPOINT_ID=$(gcloud ai endpoints list --region=$REGION \
               --sort-by=creationTimeStamp | tail -1)
 echo $ENDPOINT_ID
 gcloud ai endpoints predict $ENDPOINT_ID --region=$REGION --json-request=example_input.json
+cd 

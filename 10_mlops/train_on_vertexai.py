@@ -88,7 +88,20 @@ def train_automl_model(data_set, timestamp, develop_mode):
     model_display_name = '{}-{}'.format(ENDPOINT_NAME, timestamp)
     job = aiplatform.AutoMLTabularTrainingJob(
         display_name='train-{}'.format(model_display_name),
-        optimization_prediction_type='classification'
+        optimization_prediction_type='classification',
+        column_specs={'dep_delay': aiplatform.AutoMLTabularTrainingJob.column_data_types.NUMERIC,
+                      'taxi_out': aiplatform.AutoMLTabularTrainingJob.column_data_types.NUMERIC,
+                      'distance': aiplatform.AutoMLTabularTrainingJob.column_data_types.NUMERIC,
+                      'origin': aiplatform.AutoMLTabularTrainingJob.column_data_types.CATEGORICAL,
+                      'dest': aiplatform.AutoMLTabularTrainingJob.column_data_types.CATEGORICAL,
+                      'dep_hour': aiplatform.AutoMLTabularTrainingJob.column_data_types.NUMERIC,
+                      'is_weekday': aiplatform.AutoMLTabularTrainingJob.column_data_types.NUMERIC,
+                      'carrier': aiplatform.AutoMLTabularTrainingJob.column_data_types.CATEGORICAL,
+                      'dep_airport_lat': aiplatform.AutoMLTabularTrainingJob.column_data_types.NUMERIC,
+                      'dep_airport_lon': aiplatform.AutoMLTabularTrainingJob.column_data_types.NUMERIC,
+                      'arr_airport_lat': aiplatform.AutoMLTabularTrainingJob.column_data_types.NUMERIC,
+                      'arr_airport_lon': aiplatform.AutoMLTabularTrainingJob.column_data_types.NUMERIC,
+                      'data_split': aiplatform.AutoMLTabularTrainingJob.column_data_types.CATEGORICAL},
     )
     model = job.run(
         dataset=data_set,
@@ -196,6 +209,7 @@ def main():
                     staging_bucket='gs://{}'.format(BUCKET))
 
     # create data set
+    print('BUCKET:', BUCKET)
     all_files = tf.io.gfile.glob('gs://{}/ch9/data/all*.csv'.format(BUCKET))
     logging.info("Training on {}".format(all_files))
     data_set = aiplatform.TabularDataset.create(
