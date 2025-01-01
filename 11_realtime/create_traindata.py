@@ -40,7 +40,8 @@ def run(project, bucket, region, input):
         ]
         flights_output = '/tmp/'
     else:
-        logging.info('Running in the cloud on full dataset input={}'.format(input))
+        logging.info(
+            'Running in the cloud on full dataset input={}'.format(input))
         argv = [
             '--project={0}'.format(project),
             '--job_name=ch11traindata',
@@ -61,18 +62,20 @@ def run(project, bucket, region, input):
         # read the event stream
         if input == 'local':
             input_file = './alldata_sample.json'
-            logging.info("Reading from {} ... Writing to {}".format(input_file, flights_output))
+            logging.info("Reading from {} ... Writing to {}".format(
+                input_file, flights_output))
             events = (
-                    pipeline
-                    | 'read_input' >> beam.io.ReadFromText(input_file)
-                    | 'parse_input' >> beam.Map(lambda line: json.loads(line))
+                pipeline
+                | 'read_input' >> beam.io.ReadFromText(input_file)
+                | 'parse_input' >> beam.Map(lambda line: json.loads(line))
             )
         elif input == 'bigquery':
             input_table = 'dsongcp.flights_tzcorr'
-            logging.info("Reading from {} ... Writing to {}".format(input_table, flights_output))
+            logging.info("Reading from {} ... Writing to {}".format(
+                input_table, flights_output))
             events = (
-                    pipeline
-                    | 'read_input' >> beam.io.ReadFromBigQuery(table=input_table)
+                pipeline
+                | 'read_input' >> beam.io.ReadFromBigQuery(table=input_table)
             )
         else:
             logging.error("Unknown input type {}".format(input))
@@ -92,11 +95,12 @@ def run(project, bucket, region, input):
         for split in ['ALL', 'TRAIN', 'VALIDATE', 'TEST']:
             feats = features
             if split != 'ALL':
-                feats = feats | 'only_{}'.format(split) >> beam.Filter(lambda f: f['data_split'] == split)
+                feats = feats | 'only_{}'.format(split) >> beam.Filter(
+                    lambda f: f['data_split'] == split)
             (
                 feats
                 | '{}_to_string'.format(split) >> beam.FlatMap(dict_to_csv)
-                | '{}_to_gcs'.format(split) >> beam.io.textio.WriteToText(os.path.join(flights_output, split.lower()),
+                | '{}_to_gcs'.format(split) >> beam.io.textio.WriteToText(os.path.join(flights_output, split.lower() + "_data"),
                                                                           file_name_suffix='.csv', header=CSV_HEADER,
                                                                           # workaround b/207384805
                                                                           num_shards=1)
@@ -106,19 +110,26 @@ def run(project, bucket, region, input):
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(description='Create training CSV file that includes time-aggregate features')
-    parser.add_argument('-p', '--project', help='Project to be billed for Dataflow job. Omit if running locally.')
-    parser.add_argument('-b', '--bucket', help='Training data will be written to gs://BUCKET/flights/ch11/')
-    parser.add_argument('-r', '--region', help='Region to run Dataflow job. Choose the same region as your bucket.')
-    parser.add_argument('-i', '--input', help='local OR bigquery', required=True)
+    parser = argparse.ArgumentParser(
+        description='Create training CSV file that includes time-aggregate features')
+    parser.add_argument(
+        '-p', '--project', help='Project to be billed for Dataflow job. Omit if running locally.')
+    parser.add_argument(
+        '-b', '--bucket', help='Training data will be written to gs://BUCKET/flights/ch11/')
+    parser.add_argument(
+        '-r', '--region', help='Region to run Dataflow job. Choose the same region as your bucket.')
+    parser.add_argument(
+        '-i', '--input', help='local OR bigquery', required=True)
 
     logging.getLogger().setLevel(logging.INFO)
     args = vars(parser.parse_args())
 
     if args['input'] != 'local':
         if not args['bucket'] or not args['project'] or not args['region']:
-            print("Project, Bucket, Region are needed in order to run on the cloud on full dataset.")
+            print(
+                "Project, Bucket, Region are needed in order to run on the cloud on full dataset.")
             parser.print_help()
             parser.exit()
 
-    run(project=args['project'], bucket=args['bucket'], region=args['region'], input=args['input'])
+    run(project=args['project'], bucket=args['bucket'],
+        region=args['region'], input=args['input'])
