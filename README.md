@@ -32,7 +32,7 @@ Here is source code from the excellent book:
 
 It walks through an end-to-end example for ingesting and cleaning data and using that to make a predictive model. 
 
-### Changes and Additions made
+### Changes and additions made
 I made a few changes and additions to the code as I went through the book:
 
 1. Added support for a vscode development container. This allows for the necessary client side environment to be automatically setup, specifically:
