@@ -1,6 +1,6 @@
-# data-science-on-gcp
+# data-science-on-gcp (fork)
 
-Source code accompanying book:
+Here is source code from the excellent book:
 
 <table>
 <tr>
@@ -30,25 +30,25 @@ Source code accompanying book:
   </td>
 </table>
 
-### Try out the code on Google Cloud Platform
-<a href="https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/GoogleCloudPlatform/data-science-on-gcp&page=editor&open_in_editor=README.md"> <img alt="Open in Cloud Shell" src ="http://gstatic.com/cloudssh/images/open-btn.png"></a>
+It walks through an end-to-end example for ingesting and cleaning data and using that to make a predictive model. 
 
-The code on Qwiklabs (see below) is **continually tested**, and this repo is kept up-to-date.
+### Changes and Additions made
+I made a few changes and additions to the code as I went through the book:
 
-If the code doesn't work for you, I recommend that you try the corresponding Qwiklab lab to see if there is some step that you missed.
-If you still have problems, please leave feedback in Qwiklabs, or file an issue in this repo.
-
-### Try out the code on Qwiklabs
-
-- [Data Science on the Google Cloud Platform Quest](https://google.qwiklabs.com/quests/43)
-- [Data Science on Google Cloud Platform: Machine Learning Quest](https://google.qwiklabs.com/quests/50)
-
-
+1. Added support for a vscode development container. This allows for the necessary client side environment to be automatically setup, specifically:
+    1. All the necessary python packages are installed. Only tensorflow is pinner (@2.12) as newer versions didn't work. 
+    2. The latest gcloud SDK package is downloaded, installed from google.com and added to PATH
+    3. A .boto file is added that allows faster GSUtil uploads and removes some warnings 
+    4. Postgres client and graphviz are installed
+    5. Login to gcloud is run on container creation, and appropriate region and project set, saving some keystrokes
+    6. Added a .gloudignore that prevents accidently uploading some of the generated json files
+    7. I added my favorite shell (zsh) and extensions
+2. Upgraded the code to use Google Cloud Functions
+3. Fixed parameters to address failures as they came up, e.g. gloud functions deploy needed a higher memory limit (--memory 500MiB)
+4. Fixed a few bugs in the beam streaming code, use of timezone_at and ensuring (float) conversion
+5. Fixed some of the AutoML tuning code from Chapter 10
 
 ### Purchase book
 [Read on-line or download PDF of book](https://www.oreilly.com/library/view/data-science-on/9781098118945/)
 
 [Buy on Amazon.com](https://www.amazon.com/Data-Science-Google-Cloud-Platform-dp-1098118952/dp/1098118952/)
-
-### Updates to book
-I updated the book in Nov 2019 with TensorFlow 2.0, Cloud Functions, and BigQuery ML.
